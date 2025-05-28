@@ -1,10 +1,7 @@
-mod crypto;
-mod models;
-use models::election::Election;
-use models::voter::Voter;
-mod error;
-mod services;
-use services::voting::VotingService;
+use voting_core::models::election::Election;
+use voting_core::models::voter::Voter;
+use voting_core::services::voting::VotingService;
+
 fn main() {
     let voter1 = Voter::new();
     let voter2 = Voter::new();
@@ -22,9 +19,11 @@ fn main() {
     let vote_res = VotingService::tally(&election);
     println!("{:?}", vote_res);
 
-    let is_valid = election.verify_vote("some_receipt", "Option A");
+    let is_valid = election
+        .verify_vote("some_receipt", "Option A")
+        .unwrap_or(false);
     println!("Vote verification: {}", is_valid);
-    let is_valid = election.verify_vote(&receipt, "Option A");
+    let is_valid = election.verify_vote(&receipt, "Option A").unwrap_or(false);
     println!("Vote verification: {}", is_valid);
 
     let inclusion_proof = election.generate_inclusion_proof(&receipt);

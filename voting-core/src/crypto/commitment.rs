@@ -1,7 +1,8 @@
 use super::zkproof::ZKProof;
 use blake3::Hasher;
 use hex;
-use rand::{Rng, distr::Alphanumeric};
+use rand::RngCore;
+use rand::rngs::OsRng;
 
 #[derive(Debug, Clone, Default)]
 pub struct Commitment {
@@ -12,8 +13,9 @@ pub struct Commitment {
 
 impl Commitment {
     pub fn new(choice: &str) -> Self {
-        let mut rng = rand::rng();
-        let nonce: String = (0..64).map(|_| rng.sample(Alphanumeric) as char).collect();
+        let mut nonce_bytes = [0u8; 32];
+        OsRng.fill_bytes(&mut nonce_bytes);
+        let nonce = hex::encode(nonce_bytes);
         let commitment = compute_commitment(choice, &nonce);
         Commitment {
             commitment,
@@ -36,6 +38,10 @@ impl Commitment {
                 nonce: "invalid".to_string(),
             }
         }
+    }
+    #[deprecated]
+    pub fn reveal_choice_unsafe(&self) -> &str {
+        &self.choice
     }
 }
 

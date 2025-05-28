@@ -1,0 +1,18 @@
+[package]
+name = "voting-core"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+uuid = { workspace = true }
+serde = { workspace = true }
+rand = { workspace = true }
+blake3 = { workspace = true }
+hex = { workspace = true }
+thiserror = { workspace = true }
+num-bigint = { version = "0.4", features = ["serde", "rand"] }
+num-traits = "0.2"
+num-integer = "0.1"
+
+[dev-dependencies]
+criterion = "0.5"

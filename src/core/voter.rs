@@ -11,3 +11,9 @@ impl Voter {
         Voter { id: Uuid::new_v4() }
     }
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct VoterRegistryEntry {
+    pub voter: Voter,
+    pub has_voted: bool,
+}

@@ -1,0 +1,9 @@
+[package]
+name = "voting-server"
+version.workspace = true
+edition.workspace = true
+
+
+[dependencies]
+voting-core = { path = "../voting-core" }
+uuid = { version = "1.6", features = ["serde", "v4"] }

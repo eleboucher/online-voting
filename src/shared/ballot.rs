@@ -14,13 +14,11 @@ pub struct Ballot {
 }
 
 impl Ballot {
-    pub fn new(choice: String) -> Self {
-        let commitment_obj = Commitment::new(&choice);
-        let commitment = commitment_obj.commitment.clone();
+    pub fn new(commitment: Commitment) -> Self {
         Ballot {
             id: Uuid::new_v4(),
-            commitment,
-            choice_commitment: commitment_obj,
+            commitment: commitment.commitment.clone(),
+            choice_commitment: commitment,
         }
     }
     pub fn get_receipt(&self) -> String {
@@ -32,8 +30,7 @@ impl Ballot {
     }
 
     // Check if this ballot is for a specific choice using the commitment
-    pub fn is_vote_for(&self, choice: &str) -> bool {
-        let proof = self.generate_proof_for_choice(choice);
+    pub fn is_vote_for(&self, proof: ZKProof) -> bool {
         proof.verify()
     }
 }

@@ -1,11 +1,21 @@
-[package]
-name = "voting"
+[workspace]
+members = [
+    "voting-core",
+    "voting-server",
+    "voting-client-cli"
+]
+resolver = "3"
+
+[workspace.package]
 version = "0.1.0"
 edition = "2024"
+authors = ["Erwan Leboucher"]
 
-[dependencies]
-blake3 = "1.8.2"
-hex = "0.4.3"
-rand = "0.9.1"
-serde = { version = "1.0.219", features = ["derive"] }
-uuid = { version = "1.16.0", features = ["serde", "v4"] }
+
+[workspace.dependencies]
+uuid = { version = "1.6", features = ["serde", "v4"] }
+serde = { version = "1.0", features = ["derive"] }
+rand = "0.8"
+blake3 = "1.5"
+hex = "0.4"
+thiserror = "1.0"

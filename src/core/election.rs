@@ -1,5 +1,5 @@
-use super::ballot::Ballot;
 use super::voter::Voter;
+use super::{ballot::Ballot, voter::VoterRegistryEntry};
 use crate::error::{Result, VotingError};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -10,8 +10,8 @@ pub struct Election {
     pub id: Uuid,
     pub name: String,
     pub choices: Vec<String>,
-    voters: HashMap<Uuid, Voter>,
-    ballots: Vec<Ballot>,
+    voters: HashMap<Uuid, VoterRegistryEntry>,
+    pub ballots: Vec<Ballot>,
 
     encryption_key: String,
 }
@@ -29,26 +29,44 @@ impl Election {
     }
 
     pub fn add_voter(&mut self, voter: Voter) {
-        self.voters.insert(voter.id, voter);
-    }
-
-    pub fn vote(&mut self, voter_id: Uuid, choice: String) -> Result<String> {
-        if !self.voters.contains_key(&voter_id) {
-            return Err(VotingError::VoterNotFound);
-        }
-
-        if !self.choices.contains(&choice) {
-            return Err(VotingError::InvalidChoice);
-        }
-
-        let ballot = Ballot::new(choice);
-        let receipt = ballot.clone().get_receipt();
-        self.ballots.push(ballot);
-        Ok(receipt)
+        self.voters.insert(
+            voter.id,
+            VoterRegistryEntry {
+                voter,
+                has_voted: false,
+            },
+        );
     }
 
     pub fn nb_ballot(&self) -> usize {
         self.ballots.len()
+    }
+
+    pub fn is_allowed_voters(&self, voter_id: Uuid) -> bool {
+        self.voters.contains_key(&voter_id)
+    }
+
+    pub fn is_valid_choice(&self, choice: &str) -> bool {
+        self.choices.contains(&choice.to_string())
+    }
+
+    pub fn add_ballot(&mut self, ballot: Ballot) -> Result<String> {
+        self.ballots.push(ballot);
+        Ok(self.ballots.last().unwrap().get_receipt())
+    }
+    pub fn has_voted(&self, voter_id: &Uuid) -> bool {
+        self.voters
+            .get(voter_id)
+            .is_some_and(|entry| entry.has_voted)
+    }
+    pub fn set_voted(&mut self, voter_id: &Uuid) {
+        if let Some(entry) = self.voters.get_mut(voter_id) {
+            entry.has_voted = true;
+        }
+    }
+
+    pub fn get_ballot_by_id(&self, ballot_id: Uuid) -> Option<&Ballot> {
+        self.ballots.iter().find(|b| b.id == ballot_id)
     }
 
     pub fn generate_inclusion_proof(&self, receipt: &str) -> Option<String> {
@@ -77,22 +95,5 @@ impl Election {
             }
         }
         false
-    }
-
-    pub fn tally_votes(&self) -> HashMap<String, usize> {
-        let mut res: HashMap<String, usize> = HashMap::new();
-
-        for choice in &self.choices {
-            res.insert(choice.clone(), 0);
-        }
-
-        for ballot in &self.ballots {
-            for choice in &self.choices {
-                if ballot.is_vote_for(choice) {
-                    *res.get_mut(choice).unwrap() += 1;
-                }
-            }
-        }
-        res
     }
 }
