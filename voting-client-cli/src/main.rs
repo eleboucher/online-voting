@@ -1,12 +1,5 @@
 use std::io::{self, Write};
-use voting_core::{
-    crypto::{
-        elgamal::{encode_choice, encrypt},
-        parameters::CryptoParams,
-    },
-    models::{election::Election, voter::Voter},
-    services::voting::VotingService,
-};
+use voting_core::models::{ballot::Ballot, election::Election};
 
 fn get_input(prompt: &str) -> String {
     print!("{}", prompt);
@@ -17,22 +10,21 @@ fn get_input(prompt: &str) -> String {
 }
 
 fn main() {
-    println!("=== Voting Client CLI ===\n");
+    println!("=== Voting Client CLI (Homomorphic) ===\n");
 
-    // Simulate fetching election data (in real life, this comes from an API)
-    // We create a local dummy just to get the Public Key and Parameters
     let election = Election::new(
         "Remote Election".to_string(),
         vec!["Option A".to_string(), "Option B".to_string()],
     );
 
     println!("Connected to: {}", election.name);
+    println!("Public Key (h): {}\n", election.public_key.h); // Debug print
+
     println!("Available Choices:");
     for (i, c) in election.choices.iter().enumerate() {
         println!("{}. {}", i, c);
     }
 
-    // Interactive Selection
     let input = get_input("\nEnter the index of your choice: ");
     let choice_idx: usize = input.parse().expect("Please enter a number");
 
@@ -41,17 +33,28 @@ fn main() {
         return;
     }
 
-    println!("\nGenerating Encrypted Ballot...");
+    let selected_choice = &election.choices[choice_idx];
 
-    // 1. Encode
-    let encoded = encode_choice(choice_idx, &election.encryption_params);
+    println!("\nGenerating Homomorphic Ballot...");
 
-    // 2. Encrypt (Client-side encryption using Election Public Key)
-    let (ciphertext, _) = encrypt(&encoded, &election.public_key, &election.encryption_params);
+    let ballot = Ballot::new(
+        selected_choice,
+        &election.choices,
+        &election.public_key,
+        &election.encryption_params,
+    )
+    .expect("Failed to create ballot");
 
     println!("Ballot Encrypted successfully.");
-    println!("c1: {}", ciphertext.c1);
-    println!("c2: {}", ciphertext.c2);
+    println!("Ballot ID: {}", ballot.id);
+
+    println!("\n--- Encrypted Vector Content ---");
+    for (i, ciphertext) in ballot.ciphertexts.iter().enumerate() {
+        let is_selected = if i == choice_idx { "(Selected)" } else { "" };
+        println!("Option {} {}:", i, is_selected);
+        println!("  c1: {}", ciphertext.c1);
+        println!("  c2: {}", ciphertext.c2);
+    }
 
     println!("\n[Next Step] Send this JSON payload to the Voting Server.");
 }
